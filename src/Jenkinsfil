@@ -1,0 +1,39 @@
+pipeline {
+    agent any
+
+    environment {
+        AWS_ACCESS_KEY_ID = 'your-access-key-id'
+        AWS_SECRET_ACCESS_KEY = 'your-secret-access-key'
+    }
+
+    stages {
+        stage('Checkout') {
+            steps {
+                git 'https://github.com/TeklemariamW/terraformjenkinss3.git'
+            }
+        }
+
+        stage('Terraform Apply') {
+            steps {
+                script {
+                    sh 'terraform init'
+                    sh 'terraform apply -auto-approve'
+                }
+            }
+        }
+
+        stage('Run PySpark Script') {
+            steps {
+                script {
+                    sh 'spark-submit --master local[2] load_data_to_s3.py'
+                }
+            }
+        }
+    }
+
+    post {
+        always {
+            sh 'terraform destroy -auto-approve || true'
+        }
+    }
+}
